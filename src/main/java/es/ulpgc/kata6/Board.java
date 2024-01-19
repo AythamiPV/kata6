@@ -1,19 +1,75 @@
-package org.example;
+package es.ulpgc.kata6;
 
-// Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
-public class Main {
-    public static void main(String[] args) {
-        // Press Alt+Intro with your caret at the highlighted text to see how
-        // IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+import java.util.List;
+import static java.lang.String.join;
+import static java.lang.String.valueOf;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 
-        // Press Mayús+F10 or click the green arrow button in the gutter to run the code.
-        for (int i = 1; i <= 5; i++) {
+import static java.util.stream.IntStream.range;
+public class Board {
+    private final static char AliveCell='X';
+    private final static char DeadCell='.';
+    private final static String LineBreak="\n";
+    private final String[] state;
 
-            // Press Mayús+F9 to start debugging your code. We have set one breakpoint
-            // for you, but you can always add more by pressing Ctrl+F8.
-            System.out.println("i = " + i);
-        }
+    public Board(String state) {
+        this(state.split(LineBreak));
     }
+
+    public Board(String[] state) {
+        this.state = state;
+    }
+    public Board next(){return new Board(calculate());}
+
+    private String calculate(){
+        return range(0,rows()).mapToObj(i->calculate(i)+"\n").collect(joining());
+    }
+    private String calculate(int i){
+        return range(0,cols()).mapToObj(j->format(calculate(i,j))).collect(joining());
+    }
+    private char calculate(int i , int j){
+        return shouldBeAlive(i,j)?
+                AliveCell:
+                DeadCell;
+    }
+    private String format (char state){return valueOf(state);}
+
+    private boolean shouldBeAlive(int i, int j){
+        return isAlive(i,j)?
+                is(countAliveNeighbors(i,j),2,3):
+                is(countAliveNeighbors(i,j),3);
+    }
+    private boolean is(int value, int...options){return stream(options).anyMatch(o->o==value);}
+
+    private interface CheckAlive{
+        boolean check();
+    }
+    private int countAliveNeighbors(int i, int j){
+        return (int) neighborsOf(i,j).stream().filter(CheckAlive::check).count();
+    }
+
+    private List<CheckAlive> neighborsOf(int i, int j){
+        return List.of(
+                () -> isAlive(i-1, j-1),
+                () -> isAlive(i-1, j),
+                () -> isAlive(i-1, j+1),
+                () -> isAlive(i, j-1),
+                () -> isAlive(i, j+1),
+                () -> isAlive(i+1, j-1),
+                () -> isAlive(i+1, j),
+                () -> isAlive(i+1, j+1)
+        );
+    }
+    private boolean isAlive(int i, int j){return isInBounds(i,j) && cellAt(i,j)==AliveCell;}
+
+    private boolean isInBounds(int i, int j){return i>=0 && i<rows() && j>=0 && j<cols();}
+
+    private char cellAt(int i, int j){return state[i].charAt(j);}
+
+    private int cols(){return state[0].length();}
+
+    private int rows(){return state.length;}
+
+    public String state(){return join(LineBreak, state);}
 }
